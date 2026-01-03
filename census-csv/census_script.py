@@ -1,30 +1,39 @@
 import csv
 
-census_path = input("Enter file path:")
+file_path = input("Enter file path:")
+
+if not file_path.endswith(".txt"):
+    print("Only .txt files are allowed"); exit()
 
 try:
-    census = open(census_path, encoding="utf-8").readlines()
-except FileNotFoundError as e:
-    print(e); exit()
+    curr_file = open(file_path, encoding="utf-8", newline="\n").readlines()
+except FileNotFoundError as Err: 
+    print(Err); exit()
 
-field = input("Field columns separated by commas:").split(",")
+hint = max(len(l.split()) for l in curr_file) #--> hint the user on how many columns is needed on average
+field = input(f"Field columns separated by commas, must be of length {hint}:").split(",")
 
-with open("census.csv", "w", encoding="utf-8") as file:
-    csv_file = csv.DictWriter(file, field); csv_file.writeheader()
-    
-    n = 0
-    for lines in census:
+field_length = len(field)
+if (not field) or (field_length < hint):
+    emp_col = hint - field_length #--> get the columns left to match max line
+
+    for fill in range(emp_col):
+        field.append(f"None{fill}") #--> fill empty columns with None
+
+with open("curr_file.csv", "w", encoding="utf-8") as file:
+    csv_file = csv.DictWriter(file, field)
+    csv_file.writeheader() #--> write header in the first row
+
+    for idx, lines in enumerate(curr_file, start=1):
         line = lines.split()
 
-        if len(line) != len(field):
-            n+=1; continue
+        contact = {}
+        n = 0 #--> make column (None + n) if no more columns
 
-        contact = {field[col]:line[col] for col in range(len(field))}
-        csv_file.writerow(contact) 
-            
-    if n > 0:
-        print("{0} lines were skipped due to unequal column lengths".format(n))
+        for col in range(len(field)):
+            try:
+                contact[field[col]] = line[col]
+            except IndexError:
+                contact[field[col]] = None
 
-
-
-
+        csv_file.writerow(contact) #--> write each line under its own column
